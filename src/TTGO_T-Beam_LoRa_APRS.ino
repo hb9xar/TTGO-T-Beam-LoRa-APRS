@@ -529,7 +529,7 @@ void store_compressed_position(double Tlat, double Tlon) {
     if (position_ambiguity > 0) {
       // strip off n decimals
       int i = position_ambiguity > 4 ? 4 : position_ambiguity;
-      aprs_lat = (uint32_t ) (aprs_lon / (1000 * pow(10, i)) * 1000 * pow(10, i));
+      aprs_lon = (uint32_t ) (aprs_lon / (1000 * pow(10, i)) * 1000 * pow(10, i));
     }
     aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
 
