@@ -241,6 +241,7 @@ void handle_ScanWifi() {
   do_serial_println("WebServer: WebServer: handle_ScanWifi()");
   String listResponse = R"(<label for="networks_found_list">Networks found:</label><select class="u-full-width" id="networks_found_list">)";
   int n = WiFi.scanNetworks();
+//&&& add wdt_reset here?
   listResponse += "<option value=\"\">Select Network</option>";
 
   for (int i = 0; i < n; ++i) {
@@ -495,7 +496,7 @@ void refill_preferences_as_jsonData()
   } else {
     s_tmp = aprsLatPresetNiceNotation + " " + aprsLonPresetNiceNotation + " [" + (aprsPresetShown == "" ? "GPS" : aprsPresetShown) + "]";
   }
-  s = s + jsonLineFromString("curPos", s_tmp.c_str());
+  s = s + "\n  " +  jsonLineFromString("curPos", s_tmp.c_str());
   s = s + "\n  " +  jsonLineFromInt("UptimeMinutes", millis()/1000/60);
   s = s + "\n  " +  jsonLineFromString("OledLine1", OledLine1.c_str());
   s = s + "\n  " +  jsonLineFromString("OledLine2", OledLine2.c_str());
@@ -1176,6 +1177,7 @@ boolean restart_STA(String use_ssid, String use_password) {
 
   do_serial_println("WiFi: Searching for AP " + use_ssid);
   while (WiFi.status() != WL_CONNECTED) {
+//&&& wdt_reset makes sense here:
     esp_task_wdt_reset();
     if (retryWifi > 30) {
       do_serial_println(String("WiFi: Status " + String((int ) WiFi.status()) + ". Try " + retryWifi + ". Giving up."));
@@ -1187,6 +1189,7 @@ boolean restart_STA(String use_ssid, String use_password) {
   }
   // WL_CONNECTED = Status 3
   do_serial_println(String("WiFi: Status " + String((int ) WiFi.status()) + ". Try " + retryWifi + ". Connected."));
+//&&& wdt_reset needed?
   esp_task_wdt_reset();
   return true;;
 }
@@ -1367,6 +1370,7 @@ void restart_AP_or_STA(void) {
     gpsServer.stop();
     gpsServer.begin();
   }
+//&&& wdt_reset needed?
   esp_task_wdt_reset();
 }
 
@@ -1403,6 +1407,7 @@ void do_send_status_message_about_shutdown_or_reboot_to_aprsis(int why) {
     //outString = outString + "[B" + buildnr + "]";
     aprsis_client.print(outString + "\r\n");
   }
+//&&& wdt_reset needed? use vTaskDelay() instead of delay()?
   esp_task_wdt_reset();
   delay(500);
   aprsis_client.stop();
@@ -1454,19 +1459,25 @@ void do_send_status_message_about_connect_to_aprsis(void) {
   #endif
   do_serial_println(log_msg);
 
+//&&& wdt_reset needed?
   esp_task_wdt_reset();
   aprsis_client.print(outString + "\r\n");
 
   outString.replace(":>", ",RFONLY:>");
   if (lora_tx_enabled && tx_own_beacon_from_this_device_or_fromKiss__to_frequencies) {
-    esp_task_wdt_reset();
-    if (tx_own_beacon_from_this_device_or_fromKiss__to_frequencies % 2)
+    if (tx_own_beacon_from_this_device_or_fromKiss__to_frequencies % 2) {
+//&&& wdt_reset needed?
+      esp_task_wdt_reset();
       loraSend(txPower, lora_freq, lora_speed, 0, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
-    esp_task_wdt_reset();
-    if (tx_own_beacon_from_this_device_or_fromKiss__to_frequencies > 1 && lora_digipeating_mode > 1 && lora_freq_cross_digi > 1.0 && lora_freq_cross_digi != lora_freq)
+    }
+    if (tx_own_beacon_from_this_device_or_fromKiss__to_frequencies > 1 && lora_digipeating_mode > 1 && lora_freq_cross_digi > 1.0 && lora_freq_cross_digi != lora_freq) {
+//&&& wdt_reset needed?
+      esp_task_wdt_reset();
       loraSend(txPower_cross_digi, lora_freq_cross_digi, lora_speed_cross_digi, 0, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
+    }
   }
 
+//&&& wdt_reset needed?
   esp_task_wdt_reset();
   #ifdef KISS_PROTOCOL
     sendToTNC(outString);
@@ -1495,6 +1506,7 @@ int connect_to_aprsis(void) {
   aprsis_status = "Connected. Waiting for greeting.";
 
   uint32_t t_start = millis();
+  //&&& use vTaskDelay() instead of delay()?
   while (!aprsis_client.available() && (millis()-t_start) < 25000L) { delay(100); esp_task_wdt_reset(); }
   if (aprsis_client.available()) {
     // check
@@ -1517,6 +1529,7 @@ int connect_to_aprsis(void) {
   aprsis_client.print(String(buffer) + "\r\n");
 
   t_start = millis();
+  //&&& use vTaskDelay() instead of delay()?
   while (!aprsis_client.available() && (millis()-t_start) < 25000L) { delay(100); esp_task_wdt_reset(); }
   if (aprsis_client.available()) {
     // check
@@ -1616,6 +1629,7 @@ void read_from_aprsis(void) {
     // clear queue
     while (aprsis_client.available()) {
       String s = aprsis_client.readStringUntil('\n');
+//&&& wdt_reset needed?
       esp_task_wdt_reset();
       if (s.isEmpty())
         break;
@@ -1789,12 +1803,14 @@ void read_from_aprsis(void) {
           (!strncmp(q+1, aprsis_callsign.c_str(), aprsis_callsign.length()) && (aprsis_callsign.length() == 9 || q[9] == ' ')) ))
         return;
       if (aprsis_data_allow_inet_to_rf % 2) {
+//&&&  wdt_reset needed?
         esp_task_wdt_reset();
         loraSend(txPower, lora_freq, lora_speed, 0, third_party_packet);
       }
       if (aprsis_data_allow_inet_to_rf > 1 && lora_freq_cross_digi > 1.0 && lora_freq_cross_digi != lora_freq) {
-        loraSend(txPower_cross_digi, lora_freq_cross_digi, lora_speed_cross_digi, 0, third_party_packet);
+//&&&  wdt_reset needed?
         esp_task_wdt_reset();
+        loraSend(txPower_cross_digi, lora_freq_cross_digi, lora_speed_cross_digi, 0, third_party_packet);
       }
     }
   }
@@ -1831,6 +1847,7 @@ void send_to_aprsis()
         aprsis_status = "OK, toAPRSIS: " + s_data; aprsis_status.trim();
         aprsis_client.print(s_data);
         t_aprsis_lastRXorTX = millis();
+//&&&  wdt_reset needed?
         esp_task_wdt_reset();
       }
     }
@@ -1917,8 +1934,10 @@ void send_to_aprsis()
   server.onNotFound(handle_NotFound);
 
 
-  esp_task_wdt_init(120, true); //enable panic so ESP32 restarts
+//&&& to be called only once in the main task
+//&&&  esp_task_wdt_init(120, true); //enable panic so ESP32 restarts
   esp_task_wdt_add(NULL); //add current thread to WDT watch
+  esp_task_wdt_reset();
 
   // 8 characters is requirements for WPA2
   // May be already set by wifi.cfg
@@ -1997,6 +2016,7 @@ void send_to_aprsis()
   uint32_t webserver_started = millis();
 
 
+  // main loop
   while (true) {
     esp_task_wdt_reset();
 
@@ -2166,7 +2186,7 @@ void send_to_aprsis()
 
     } // aprsis_enabled
 
-    vTaskDelay(5/portTICK_PERIOD_MS);
+    vTaskDelay(5/portTICK_PERIOD_MS); // 5ms delay
   }
 }
 

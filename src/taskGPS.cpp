@@ -45,7 +45,8 @@ bool gpsInitialized = false;
   }
 
 
-  esp_task_wdt_init(120, true); //enable panic so ESP32 restarts
+//&&& to be called only once in the main task
+//&&&  esp_task_wdt_init(120, true); //enable panic so ESP32 restarts
   esp_task_wdt_add(NULL); //add current thread to WDT watch
 
   String gpsDataBuffer = "              ";
@@ -75,6 +76,6 @@ bool gpsInitialized = false;
         }
       #endif
     }
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS); // 100ms delay
   }
 }

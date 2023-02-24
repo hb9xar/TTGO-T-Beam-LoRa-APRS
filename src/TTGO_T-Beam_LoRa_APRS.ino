@@ -3224,6 +3224,9 @@ void setup()
   // for diagnostics
   uint32_t t_setup_entered = millis();
 
+  // initialize ESP32 Process WDT, 120s T/O
+  esp_task_wdt_init(120, true);
+
   // Our BUILD_NUMBER. The define is not available in the WEBSERVR -> we need to assign a global variable
   buildnr = BUILD_NUMBER;
 
@@ -3508,8 +3511,9 @@ void setup()
 #endif /* ENABLE_WIFI */
 
 
-  esp_task_wdt_init(120, true); //enable panic so ESP32 restarts
+//&&&  esp_task_wdt_init(120, true); //enable panic so ESP32 restarts
   esp_task_wdt_add(NULL); //add current thread to WDT watch
+  esp_task_wdt_reset();
 
   setup_oled_timer_values();
 
@@ -4544,7 +4548,7 @@ void handle_usb_serial_input(void) {
           } else if (cmd == "wifi") {
             if (arg != "") {
               #ifdef ENABLE_PREFERENCES
-                preferences.putInt(PREF_WIFI_ENABLE, (arg_bool) ? 0 : 1);
+                preferences.putInt(PREF_WIFI_ENABLE, (arg_bool) ? 1 : 0);
                 #if defined(ENABLE_SYSLOG)
                   if (debug_verbose)
                     syslog_log(LOG_DEBUG, String("FlashWrite preferences: handle_usb_serial_input() 4"));
@@ -4565,9 +4569,21 @@ void handle_usb_serial_input(void) {
                   webserverStarted = true;
                   writedisplaytext("LoRa-APRS","","TNC:","WiFi task started","long press button","to stop again");
                   esp_task_wdt_reset();
+//&&& use vTaskDelay() instead of delay()?
                   delay(1500);
                   esp_task_wdt_reset();
                 }
+              } else {
+//&&&+++
+                if (webserverStarted) {
+                  Serial.println("LoRa-APRS is rebooting to stop WiFi");
+#ifdef	ENABLE_WIFI
+                  do_send_status_message_about_reboot_to_aprsis();
+#endif
+                  ESP.restart();
+                }
+//&&&---
+
               }
             }
             Serial.println("*** " + cmd + " is " + (enable_webserver ? "on" : "off"));
@@ -4882,6 +4898,7 @@ void loop()
     } // else: enabled_oled == false: never turn on. enabled_oled == true and oled_timer == 0L: recently turned off -> also no need to be turned on.
   }
 
+  // long press button
   if (digitalRead(BUTTON)==LOW && key_up == false && millis() >= time_delay && t_lock == false) {
     // enable OLED
     enableOled();
