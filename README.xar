@@ -1,0 +1,28 @@
+
+in case of PIO problems, remove the .pio directory and rebuild.
+
+Show all build targets:
+$ platformio.sh pio run --list-targets
+
+
+Build:
+$ platformio.sh pio run -e ttgo-t-beam-v1.0
+
+Erase Flash (optional):
+$ platformio.sh pio run -e ttgo-t-beam-v1.0 -t erase
+
+Upload Firmware:
+$ platformio.sh pio run -e ttgo-t-beam-v1.0 -t upload
+
+and filesystem image
+$ platformio.sh pio run -e ttgo-t-beam-v1.0 -t uploadfs
+
+
+
+---------------------------------------------------------------------------
+WDT handling
+- should esp_task_wdt_init() be called only once (and not per task, as it is in the code)?
+  then, after init(), the individual tasks are added with esp_task_wdt_add()
+-> rewrite task WDT handling
+  also, too many wdt resets are in the code...
+
