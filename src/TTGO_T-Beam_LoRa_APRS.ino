@@ -3224,6 +3224,9 @@ void setup()
   // for diagnostics
   uint32_t t_setup_entered = millis();
 
+  // initialize ESP32 Process WDT, 120s T/O
+  esp_task_wdt_init(120, true);
+
   // Our BUILD_NUMBER. The define is not available in the WEBSERVR -> we need to assign a global variable
   buildnr = BUILD_NUMBER;
 
@@ -3508,8 +3511,8 @@ void setup()
 #endif /* ENABLE_WIFI */
 
 
-  esp_task_wdt_init(120, true); //enable panic so ESP32 restarts
   esp_task_wdt_add(NULL); //add current thread to WDT watch
+  esp_task_wdt_reset();
 
   setup_oled_timer_values();
 
