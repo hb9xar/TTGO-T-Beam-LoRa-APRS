@@ -1922,6 +1922,7 @@ void send_to_aprsis()
 
   // esp_task_wdt_init() has already been done in main task.
   esp_task_wdt_add(NULL); //add current thread to WDT watch
+  esp_task_wdt_reset();
 
   // 8 characters is requirements for WPA2
   // May be already set by wifi.cfg
